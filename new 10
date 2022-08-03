@@ -1,0 +1,261 @@
+ Retrofit.Builder builder = createRetrofitBuilder();
+        APIServiceProvider.init(builder);
+		
+		
+		
+		 private Retrofit.Builder createRetrofitBuilder() {
+        Retrofit.Builder builder = new Retrofit.Builder();
+        builder.addConverterFactory(MovieGsonConverterFactory.create());
+        builder.addCallAdapterFactory(RxErrorHandlingCallAdapterFactory.create());
+        Factory nvCallFactory = createNvCallFactory();
+        Factory okHttpFactory = createOkHttpFactory();
+        builder.callFactory(new OkOrNvCallFactory(nvCallFactory,okHttpFactory));
+        return builder;
+    } class RxErrorHandlingCallAdapterFactory extends CallAdapter.Factory {
+
+    private final RxJavaCallAdapterFactory original;
+    public final static Vector<CatRecord> recordsCache = new Vector<>();
+
+    private RxErrorHandlingCallAdapterFactory() {
+        original = RxJavaCallAdapterFactory.create();
+    }
+
+    public static CallAdapter.Factory create() {
+        return new RxErrorHandlingCallAdapterFactory();
+    }
+
+    @Override
+    public CallAdapter<?> get(Type returnType, Annotation[] annotations, Retrofit retrofit) {
+        return new RxCallAdapterWrapper(original.get(returnType, annotations, retrofit));
+    }
+
+    private static class RxCallAdapterWrapper implements CallAdapter<Observable<?>> {
+        private final CallAdapter<?> wrapped;
+
+        public RxCallAdapterWrapper(CallAdapter<?> wrapped) {
+            this.wrapped = wrapped;
+        }
+
+        @Override
+        public Type responseType() {
+            return wrapped.responseType();
+        }
+
+
+
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <R> Observable<?> adapt(final Call<R> call) {
+            String url = "";
+            if (call != null && call.request() != null) {
+                url = call.request().url();
+            }
+            final CatRecord catRecord = new CatRecord();
+            final String tmpUrl = url;
+            return ((Observable) wrapped.adapt(call)).doOnRequest(new Action1<Long>() {
+                @Override
+                public void call(Long aLong) {
+                    String kurl = "null";
+                    if (call != null && call.request() != null) {
+                         kurl = call.request().url();
+                    }
+                    catRecord.startTime = System.currentTimeMillis();
+                    catRecord.command = RaptorHost.url2Command(kurl);
+//                    Log.e("smile"," doOnRequest url  = "+kurl);
+//                    Log.e("smile","doOnRequest command is "+catRecord.command);
+                }
+            }).doOnCompleted(new Action0() {
+                @Override
+                public void call() {
+                    catRecord.responseTime = (int) (System.currentTimeMillis() - catRecord.startTime);
+                    catRecord.resultCode = 2000;
+                    recordsCache.add(catRecord);
+//                    Log.d("smile"," doOnCompleted ");
+                    uploadRecord();
+                }
+            }).doOnError(new Action1<Throwable>() {
+                @Override
+                public void call(Throwable throwable) {
+//                    Log.e("smile"," doOnError");
+                }
+            }).onErrorResumeNext(new Func1<Throwable, Observable>() {
+                @Override
+                public Observable call(Throwable throwable) {
+                    String eurl = "null";
+                    if (call != null && call.request() != null) {
+                        eurl = call.request().url();
+                    }
+                    catRecord.responseTime = (int) (System.currentTimeMillis() - catRecord.startTime);
+                    int resultCode = -2000; //默认的未知错误
+                    RetrofitException retrofitException = asRetrofitException(throwable, tmpUrl);
+                    if(retrofitException.kind == RetrofitException.MTSI){
+                        resultCode = RaptorCoder.FAILED_MTSI;
+                    }else if(retrofitException.kind == RetrofitException.SERVER){
+                        resultCode = RaptorCoder.FAILED_SERVER_ERROR;
+                    }else if(retrofitException.kind == RetrofitException.PARSE){
+                        resultCode = RaptorCoder.FAILED_GSON_COVERT;
+                    }else if(retrofitException.kind == RetrofitException.NETWORK){
+                        resultCode = RaptorCoder.FAILED_HTTP_EXCEPTION - retrofitException.serverCode;
+                    }
+                    catRecord.resultCode = resultCode;
+                    catRecord.errMsg = "code = "+resultCode
+                            +"  ******     errorUrl =  "+eurl
+                            +"  ******     msg = "+retrofitException.serverMsg;
+//                    Log.e("smile"," error msg  = "+catRecord.errMsg);
+                    if(resultCode != RaptorCoder.FAILED_MTSI && resultCode != -4408){
+                        recordsCache.add(catRecord);
+                    }
+                    uploadRecord();
+                    return Observable.error(retrofitException);
+                }
+            });
+        }
+
+
+        private RetrofitException asRetrofitException(Throwable throwable, String url) {
+            MovieLogUtils.network(url + MovieLogUtils.getStackTrace(throwable));
+            if (ExceptionUtils.isRequestException(throwable)) {
+                return new RetrofitException(throwable, RetrofitException.NETWORK);
+            } else if (ExceptionUtils.isServerException(throwable)) {
+                return new RetrofitException(throwable, RetrofitException.SERVER);
+            } else if (throwable instanceof MtsiException || (throwable.getCause() != null && throwable.getCause() instanceof MtsiException)) {
+                return new RetrofitException(throwable, RetrofitException.MTSI);
+            } else if(ExceptionUtils.isJsonParseException(throwable)){
+                return new RetrofitException(throwable,RetrofitException.PARSE);
+            }else {
+                return new RetrofitException(throwable, RetrofitException.UNEXPECTED);
+            }
+        }
+    }
+}class RetrofitException extends RuntimeException {
+
+    public static final int UNEXPECTED = 0;
+    public static final int SERVER = 1;
+    public static final int NETWORK = 2;
+    public static final int MTSI = 3;
+    public static final int PARSE = 4;
+
+    @IntDef({UNEXPECTED, SERVER, NETWORK, MTSI,PARSE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Kind {
+
+    }
+
+    public int kind;
+    public int serverCode = -1;
+    public String serverInfo;
+    public String serverMsg;
+    public String requestCode;
+
+    public RetrofitException(Throwable throwable, @Kind int kind) {
+        super(throwable.getMessage(), throwable);
+        this.kind = kind;
+        if (kind == SERVER) {
+            if (throwable instanceof ServerException) {
+                serverCode = ((ServerException) throwable).code;
+                serverMsg = ((ServerException) throwable).msg;
+                serverInfo = ((ServerException) throwable).info;
+            } else if (throwable.getCause() instanceof ServerException) {
+                serverCode = ((ServerException) throwable.getCause()).code;
+                serverMsg = ((ServerException) throwable.getCause()).msg;
+                serverInfo = ((ServerException) throwable.getCause()).info;
+            }
+        }else if(kind == MTSI){
+            if(throwable instanceof MtsiException){
+                serverCode = ((MtsiException) throwable).code;
+                serverMsg = ((MtsiException) throwable).msg;
+                requestCode = ((MtsiException) throwable).requestCode;
+            } else if (throwable.getCause() instanceof MtsiException){
+                serverCode = ((MtsiException) throwable.getCause()).code;
+                serverMsg = ((MtsiException) throwable.getCause()).msg;
+                requestCode = ((MtsiException) throwable.getCause()).requestCode;
+            }
+        }else if(kind == PARSE){
+            if (throwable instanceof JsonParseException) {
+                serverCode = -2003;
+                serverMsg =  exception2Str(throwable);
+            } else if (throwable.getCause() instanceof JsonParseException) {
+                serverCode = -2003;
+                serverMsg = exception2Str(throwable.getCause());
+            }
+        }else if(kind == NETWORK){
+            if(throwable instanceof HttpException){
+                serverCode = ((HttpException) throwable).code();
+                serverMsg = exception2Str(throwable);
+            }else if(throwable.getCause() instanceof  HttpException){
+                serverCode = ((HttpException) throwable.getCause()).code();
+                serverMsg = exception2Str(throwable.getCause());
+            }else if(throwable instanceof IOException){
+                serverCode = 408; //用户断网
+                serverMsg = exception2Str(throwable);
+            }else{
+                serverCode = 409; //如果不是httpexcption，其它网络问题就先标记为409
+                serverMsg = exception2Str(throwable);
+            }
+        }else{
+            serverMsg = exception2Str(throwable);
+        }
+
+    }
+
+    @Override
+    public String getMessage() {
+        if (kind == SERVER) {
+            return serverMsg;
+        }
+        return super.getMessage();
+    }
+
+    public String getInfo() {
+        if (kind == SERVER) {
+            return serverMsg;
+        }
+        return null;
+    }
+
+    private String exception2Str(Throwable t) {
+        if(t == null)
+            return "get nothing exception msg";
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try{
+            t.printStackTrace(new PrintStream(baos));
+        }catch (Exception e){
+            return "catch throwable msg occur a new exception";
+        }finally{
+            try {
+                baos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return baos.toString();
+    }
+	
+	public abstract class BaseUsecase<T> {
+
+    protected T api;
+
+   api = APIServiceProvider.create((Class<T>) t);
+   
+   NewHostUsecaseImp extends NewBaseUseCase<NewHostAPI> 
+
+//防止出现多域名
+ublic class NewApiProvider {
+    private static Retrofit retrofit;
+
+    public static void init(Retrofit.Builder builder) {
+        if (retrofit == null) {
+            builder.baseUrl(APIConsts.ONLINE_URL);
+            retrofit = builder.build();
+        }
+    }
+
+    public static <T> T create(final Class<T> service) {
+        try {
+            return retrofit.create(service);
+        } catch (Exception e) {
+            throw new RuntimeException("Create service Exception by class!");
+        }
+    }
+}
