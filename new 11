@@ -1,0 +1,2140 @@
+
+    private LineDataSet getShowDataSet(List<Entry> yVals, String label) {
+        LineDataSet set = getBoxDataSet(yVals, label);
+        set.setColor(getResources().getColor(R.color.chart_yellow));
+        set.setLineWidth(1.5f);
+        if (Build.VERSION.SDK_INT >= 18) {
+            // fill drawable only supported on api level 18 and above
+            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{Color.parseColor("#33FC8B00"),Color.parseColor("#00FC8B00")});//创建drawable
+            set.setFillDrawable(gd);
+        }
+        else {
+            set.setFillColor(getResources().getColor(R.color.chart_yellow));
+        }
+        return set;
+    }
+	
+	    private void doYearDateChange(boolean isPre) {
+        Calendar calendar = currentDate.startCalendar;
+        calendar.add(Calendar.YEAR, isPre ? -1 : 1);
+    }    protected boolean isPreWeekEnable(CustomDate critical, CustomDate current) {
+        int space = Formatter.getDateSpace(critical.startCalendar, current.startCalendar);
+        return !(space >= 0 && space < 7);
+    }
+package com.sankuai.moviepro.common.utils;
+
+import android.content.Context;
+import android.text.TextUtils;
+
+import com.sankuai.moviepro.common.R;
+import com.sankuai.moviepro.common.time.SntpClock;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+
+/**
+ * 业务无关的格式化工具类
+ */
+public class Formatter {
+
+    //北美周五为一周开始
+    public static final int NORTH_AMERICA_DAY_OF_WEEK = Calendar.FRIDAY;
+    //印度周一为一周的开始
+    public static final int INDIA_DAY_OF_WEEK = Calendar.MONDAY;
+    //韩国周五为一周的开始
+    public static final int KOREA_DAY_OF_WEEK = Calendar.FRIDAY;
+    //日本周六为一周的开始
+    public static final int JAPAN_DAY_OF_WEEK = Calendar.SATURDAY;
+
+    private static final String[] WEEK = {"日", "一", "二", "三", "四", "五", "六"};
+    private static final long ONE_SECOND = 1000L;
+    private static final long ONE_MINUTE = 60 * ONE_SECOND;
+    private static final long ONE_HOUR = 60 * ONE_MINUTE;
+    public static final long ONE_DAY = 24 * ONE_HOUR;
+    public static final String FORMAT_DATE = "yyyy-MM-dd";
+    public static TimeZone chinaZone = TimeZone.getTimeZone("GMT+08:00");
+    public static final ThreadLocal<DateFormat> HHMM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("HH:mm");
+        }
+    };
+    public static final ThreadLocal<DateFormat> HHMMSS = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("HH:mm:ss");
+        }
+    };
+    public static final ThreadLocal<DateFormat> CN_M = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("M月");
+        }
+    };
+    public static final ThreadLocal<DateFormat> HH = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("HH");
+        }
+    };
+
+    public static final ThreadLocal<DateFormat> MM_DD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("MM-dd");
+        }
+    };
+    public static final ThreadLocal<DateFormat> MMDD2 = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("MM.dd");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYYMMDD2 = new ThreadLocal<DateFormat>(){
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy.MM.dd");
+        }
+    };
+
+    public static final ThreadLocal<DateFormat> MVD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("M/d");
+        }
+    };
+    public static final ThreadLocal<DateFormat> CN_MD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("M月d日");
+        }
+    };
+    public static final ThreadLocal<DateFormat> MM_DD_HHMM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("MM-dd HH:mm");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYY_MM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy-MM");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYYMM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyyMM");
+        }
+    };
+    public static final ThreadLocal<DateFormat> CN_YYYYM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy年M月");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYY_MM_DD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy-MM-dd");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYYMMDD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyyMMdd");
+        }
+    };
+    public static final ThreadLocal<DateFormat> CN_YYYYMD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy年M月d日");
+        }
+    };
+    public static final ThreadLocal<DateFormat> CN_YYYYMMDD = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy年MM月dd日");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYY_MM_DD_WEEK_HHMM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy-MM-dd 周* HH:mm");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYY_MM_DD_HHMMSS = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy-MM-dd HH:mm:ss");
+        }
+    };
+    public static final ThreadLocal<DateFormat> YYYY_MM_DD_HHMM = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy-MM-dd HH:mm");
+        }
+    };
+
+    public static final ThreadLocal<DateFormat> YYYY = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy");
+        }
+    };
+
+    public static final ThreadLocal<DateFormat> YYYY_M_D = new ThreadLocal<DateFormat>() {
+        @Override
+        protected DateFormat initialValue() {
+            return getDateFormat("yyyy-M-d");
+        }
+    };
+
+
+
+    public static DateFormat getDateFormat(String format) {
+        SimpleDateFormat sf = new SimpleDateFormat(format);
+        sf.setTimeZone(chinaZone);
+        return sf;
+    }
+
+    /**
+     * 返回时间对应的yyyy-mm-dd格式时间
+     *
+     * @param time 日期时间戳
+     */
+    public static String getYYYY_MM_DD(long time) {
+        return YYYY_MM_DD.get().format(new Date(time));
+    }
+
+    /**
+     * 输入带格式的日期返回Calendar
+     *
+     * @param dateStr
+     * @param fromFormat
+     */
+    public static Calendar getCalendar(String dateStr, ThreadLocal<DateFormat> fromFormat) {
+        Calendar calendar = getCurrentCalendar();
+        try {
+            Date date = fromFormat.get().parse(dateStr);
+            calendar.setTime(date);
+        } catch (Exception e) {
+            //不需要日志输出
+        }
+        return calendar;
+    }
+
+    public static Calendar getCalendar(Date date) {
+        Calendar calendar = getCurrentCalendar();
+        calendar.setTime(date);
+        return calendar;
+    }
+
+    public static Date parse(String dateStr, ThreadLocal<DateFormat> fromFormat) {
+        try {
+            return fromFormat.get().parse(dateStr);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static String parse(long time, ThreadLocal<DateFormat> toFormat) {
+        return parse(new Date(time), toFormat);
+    }
+
+    public static String parse(Date date, ThreadLocal<DateFormat> toFormat) {
+        if (date == null)
+            return "";
+        return toFormat.get().format(date);
+    }
+
+    public static String parse(Calendar calendar, ThreadLocal<DateFormat> toFormat) {
+        if (calendar == null)
+            return "";
+        return parse(calendar.getTimeInMillis(), toFormat);
+    }
+
+    public static String parse(String dateStr, ThreadLocal<DateFormat> originFormat, ThreadLocal<DateFormat> desFormat) {
+        try {
+            Date date = originFormat.get().parse(dateStr);
+            return desFormat.get().format(date);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 将传入时间转化为“xxxx 周* xxxx”类似格式
+     *
+     * @param dateStr    格式化的日期字符串
+     * @param fromFormat 传入的日期格式
+     * @param toFormat   需要的日期格式
+     * @return date
+     */
+    public static String parseDateWithWeek(String dateStr, ThreadLocal<DateFormat> fromFormat, ThreadLocal<DateFormat> toFormat) {
+        try {
+            Date date = fromFormat.get().parse(dateStr);
+            return parseDateWithWeek(date, toFormat);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * {@link #parseDateWithWeek(String, ThreadLocal, ThreadLocal)} 的国际化版本.
+     */
+    public static String parseI18nDateWithWeek(Context context, String dateStr, ThreadLocal<DateFormat> fromFormat, ThreadLocal<DateFormat> toFormat) {
+        try {
+            Date date = fromFormat.get().parse(dateStr);
+            return parseI18nDateWithWeek(context, date, toFormat);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 将传入时间转化为“xxxx 周*”类似格式
+     *
+     * @param date     日期Date
+     * @param toFormat 需要的日期格式
+     */
+    public static String parseDateWithWeek(Date date, ThreadLocal<DateFormat> toFormat) {
+        try {
+            String to = toFormat.get().format(date);
+            String dayOfWeek = parseWeek(date);
+            return to + " " + dayOfWeek;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    /**
+     * {@link #parseDateWithWeek(Date, ThreadLocal)} 的国际化版本.
+     */
+    public static String parseI18nDateWithWeek(Context context, Date date, ThreadLocal<DateFormat> toFormat) {
+        try {
+            String to = toFormat.get().format(date);
+            String dayOfWeek = parseI18nWeek(context, date);
+            return to + " " + dayOfWeek;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    /**
+     * 将传入的日期转换为"x"
+     *
+     * @param calendar 日期
+     * @return '日、一、二、三、四、五、六'，之一
+     */
+    public static String parseWeekOnlyDay(Calendar calendar) {
+        return WEEK[calendar.get(Calendar.DAY_OF_WEEK) - 1];
+    }
+
+    /**
+     * 国际化 "周日"、"周一" 对应 "Sun", "Mon" 等等.
+     */
+    public static String parseI18nWeek(Context context, Calendar calendar) {
+        return context.getResources().getStringArray(R.array.i18n_week)[calendar.get(Calendar.DAY_OF_WEEK) - 1];
+    }
+
+    /**
+     * 将传入的日期转换为"周x"
+     *
+     * @param calendar 日期
+     */
+    public static String parseWeek(Calendar calendar) {
+        return "周" + parseWeekOnlyDay(calendar);
+    }
+
+    /**
+     * 将传入的日期转换为"周x"
+     *
+     * @param date 日期
+     */
+    public static String parseWeek(Date date) {
+        Calendar calendar = getCalendar(date);
+        return parseWeek(calendar);
+    }
+
+    /**
+     * {@link #parseWeek(Date)} 的国际化版本.
+     */
+    public static String parseI18nWeek(Context context, Date date) {
+        Calendar calendar = getCalendar(date);
+        return parseI18nWeek(context, calendar);
+    }
+
+    /**
+     * 将传入的时间戳转换为北京时间并且格式"yyyy-MM-dd 周* HH:mm"
+     *
+     * @param millis 日期时间戳
+     */
+    public static String getBeiJingWeekByMillis(long millis) {
+        Date date = new Date(millis);
+        Calendar calendar = getCurrentCalendar();
+        calendar.setTime(date);
+        String dayOfWeek = WEEK[calendar.get(Calendar.DAY_OF_WEEK) - 1];
+        YYYY_MM_DD_WEEK_HHMM.get().setTimeZone(chinaZone);
+        String result = YYYY_MM_DD_WEEK_HHMM.get().format(date);
+        return result.replace("*", dayOfWeek);
+    }
+
+    /**
+     * 返回今天的日期，"yyyy-MM-dd"
+     */
+    public static String getTodayYYYY_MM_DD() {
+        return YYYY_MM_DD.get().format(getCurrentDate());
+    }
+
+    public static String getTodayYYYY_MM_DD_HHMMSS(){
+        return YYYY_MM_DD_HHMMSS.get().format(getCurrentDate());
+    }
+    /**
+     * 判断是否为今年
+     *
+     * @param year 年
+     */
+    public static boolean isCurrentYear(int year) {
+        Calendar current = getCurrentCalendar();
+        return current.get(Calendar.YEAR) == year;
+    }
+
+    /**
+     * 获取目标日期所在月的最后一天的日期
+     */
+    public static Calendar getMonthLastDay(long millis) {
+        Calendar cal = getCurrentCalendar();//获取当前日期
+        cal.setTimeInMillis(millis);
+        int lastday = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+        cal.set(Calendar.DAY_OF_MONTH, lastday);
+        return cal;
+    }
+
+
+    /**
+     * 获取今天凌晨时间
+     *
+     * @return 当日凌晨的时间，以毫秒为单位
+     */
+    public static Calendar getToday() {
+        return parseNoHHMMSS(getCurrentDate());
+    }
+
+    /**
+     * 截取日期，如：2012-12-20 12:12:12，将返回2012-12-20 00:00:00
+     */
+    private static Calendar parseNoHHMMSS(Date when) {
+        Calendar cl = getCurrentCalendar();
+        cl.setTime(when);
+        int year = cl.get(Calendar.YEAR);
+        int month = cl.get(Calendar.MONTH);
+        int date = cl.get(Calendar.DATE);
+
+        cl.clear();
+        cl.set(year, month, date);
+        return cl;
+    }
+
+    // 获取当前时间所在年的最大周数
+    public static int getMaxWeekNumOfYear(int year) {
+        Calendar c = getCurrentCalendar();
+        c.set(year, Calendar.DECEMBER, 31, 23, 59, 59);
+        c.setFirstDayOfWeek(Calendar.MONDAY);
+        c.setMinimalDaysInFirstWeek(7);
+        c.setTime(c.getTime());
+        return c.get(Calendar.WEEK_OF_YEAR) - 1;
+    }
+
+    // 获取某年的第几周的开始日期
+    public static Date getFirstDayOfWeek(int year, int week) {
+        Calendar c = getCurrentCalendar();
+        c.set(Calendar.YEAR, year);
+        c.set(Calendar.MONTH, Calendar.JANUARY);
+        c.set(Calendar.DATE, 1);
+
+        Calendar cal = (GregorianCalendar) c.clone();
+        if (c.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
+            cal.add(Calendar.DATE, (week - 1) * 7);
+        } else {
+            cal.add(Calendar.DATE, week * 7);
+        }
+        return getFirstDayOfWeek(cal.getTime());
+    }
+
+
+    // 获取某年的第几周的结束日期
+    public static Date getLastDayOfWeek(int year, int week) {
+        Calendar c = getCurrentCalendar();
+        c.set(Calendar.YEAR, year);
+        c.set(Calendar.MONTH, Calendar.JANUARY);
+        c.set(Calendar.DATE, 1);
+
+        Calendar cal = (GregorianCalendar) c.clone();
+        if (c.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
+            cal.add(Calendar.DATE, (week - 1) * 7);
+        } else {
+            cal.add(Calendar.DATE, week * 7);
+        }
+
+        return getLastDayOfWeek(cal.getTime());
+    }
+
+    // 获取当前时间所在周的开始日期
+    public static Date getFirstDayOfWeek(Date date) {
+        Calendar c = getCurrentCalendar();
+        c.setFirstDayOfWeek(Calendar.MONDAY);
+        c.setTime(date);
+        c.set(Calendar.DAY_OF_WEEK, c.getFirstDayOfWeek()); // Monday
+        return c.getTime();
+    }
+
+    // 获取当前时间所在周的结束日期
+    public static Date getLastDayOfWeek(Date date) {
+        Calendar c = getCurrentCalendar();
+        c.setFirstDayOfWeek(Calendar.MONDAY);
+        c.setTime(date);
+        c.set(Calendar.DAY_OF_WEEK, c.getFirstDayOfWeek() + 6); // Sunday
+        return c.getTime();
+    }
+
+    public static Calendar getCurrentCalendar() {
+        Calendar calendar = Calendar.getInstance(Formatter.chinaZone, Locale.CHINA);
+        calendar.setTimeInMillis(getCurrentMillis());
+        return calendar;
+    }
+
+    public static Date getCurrentDate() {
+        Date date = new Date();
+        date.setTime(getCurrentMillis());
+        return date;
+    }
+
+    public static long getCurrentMillis() {
+        return SntpClock.currentTimeMillis();
+    }
+
+    // 获取当前年份
+    public static int getCurrentYear() {
+        Calendar c = getCurrentCalendar();
+        c.setTime(getCurrentDate());
+        return c.get(Calendar.YEAR);
+    }
+
+    // 获取当前月份
+    public static int getCurrentMonth() {
+        Calendar c = getCurrentCalendar();
+        c.setTime(getCurrentDate());
+        return c.get(Calendar.MONTH) + 1;
+    }
+
+    // 获取当前日所在年的第几天
+    public static int getCurrentDayOfYear() {
+        Calendar c = getCurrentCalendar();
+        c.setTime(getCurrentDate());
+        return c.get(Calendar.DAY_OF_YEAR);
+    }
+
+    // 获取当前日所在年的第几天
+    public static int getCurrentDayOfMonth() {
+        Calendar c = getCurrentCalendar();
+        c.setTime(getCurrentDate());
+        return c.get(Calendar.DAY_OF_MONTH);
+    }
+
+    public static int getWeeksOfMonth(String yearmonth) {
+        try {
+            Date date = YYYY_MM_DD.get().parse(yearmonth);
+            Calendar calendar = getCurrentCalendar();
+            calendar.setTime(date);
+            return calendar.getActualMaximum(Calendar.WEEK_OF_MONTH);
+        } catch (Exception e) {
+            return 5;
+        }
+    }
+
+    /**
+     * 获取月份的天数
+     */
+    public static int getDaysOfMonth(String dateStr) {
+        try {
+            Date date = YYYY_MM.get().parse(dateStr);
+            Calendar calendar = getCurrentCalendar();
+            calendar.setTime(date);
+            int days = calendar.getActualMaximum(Calendar.DATE);
+            return days;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+
+    /**
+     * 返回两个日期之间相差的天数
+     *
+     * @param date1 "2011-01-01"
+     * @param date1 "2012-01-01"
+     */
+    public static int getDateSpace(String date1, String date2) {
+        return getDateSpace(getCalendar(date1, YYYY_MM_DD), getCalendar(date2, YYYY_MM_DD));
+    }
+
+    public static int getDateSpace(long time1, long time2) {
+        return getDateSpace(getCalendar(new Date(time1)), getCalendar(new Date(time2)));
+    }
+
+    public static int getDateSpace(Calendar calst, Calendar caled) {
+        if (calst == null || caled == null) {
+            return 0;
+        }
+        calst.setTimeZone(chinaZone);
+        caled.setTimeZone(chinaZone);
+        //设置时间为0时
+        calst.set(Calendar.HOUR_OF_DAY, 0);
+        calst.set(Calendar.MINUTE, 0);
+        calst.set(Calendar.SECOND, 0);
+        caled.set(Calendar.HOUR_OF_DAY, 0);
+        caled.set(Calendar.MINUTE, 0);
+        caled.set(Calendar.SECOND, 0);
+        //得到两个日期相差的天数
+        return ((int) (caled.getTime().getTime() / 1000) - (int) (calst.getTime().getTime() / 1000)) / 3600 / 24;
+    }
+
+    public static int getDateSpaceMonths(long time1, long time2) {
+        return ((int) (time2 / 1000) - (int) (time1 / 1000)) / 3600 / 24 / 30;
+    }
+
+    /**
+     * 输入"yyy-MM-dd"判断一个日期是否周末
+     */
+    public static boolean isWeekend(String date) {
+        Calendar calendar = getCalendar(date, YYYY_MM_DD);
+        int dayInWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        return dayInWeek == 1 || dayInWeek == 7;
+    }
+
+    /**
+     * 根据输入的起止日期返回是当年的第几周
+     *
+     * @param startCalendar 开始时间
+     * @param endCalendar   结束时间
+     * @param weekStart     不同国家的周开始时间不一样Calendar.SUNDAY、Calendar.MONDAY...
+     * @return 第几周
+     */
+    public static int getWeekOfYear(Calendar startCalendar, Calendar endCalendar, int weekStart) {
+        startCalendar.setFirstDayOfWeek(weekStart);
+        startCalendar.setMinimalDaysInFirstWeek(7);
+        endCalendar.setFirstDayOfWeek(weekStart);
+        endCalendar.setMinimalDaysInFirstWeek(7);
+
+        int startWeek = startCalendar.get(Calendar.WEEK_OF_YEAR);
+        int endWeek = endCalendar.get(Calendar.WEEK_OF_YEAR);
+
+        return Math.max(startWeek, endWeek);
+    }
+
+    /**
+     * 根据输入的起止日期返回是当年的第几周
+     *
+     * @param startCalendar 开始时间
+     * @param endCalendar   结束时间
+     * @return 第几周
+     */
+    public static int getWeekOfYear(Calendar startCalendar, Calendar endCalendar) {
+        startCalendar.setFirstDayOfWeek(Calendar.MONDAY);
+        startCalendar.setMinimalDaysInFirstWeek(7);
+        endCalendar.setFirstDayOfWeek(Calendar.MONDAY);
+        endCalendar.setMinimalDaysInFirstWeek(7);
+
+        int startWeek = startCalendar.get(Calendar.WEEK_OF_YEAR);
+        int endWeek = endCalendar.get(Calendar.WEEK_OF_YEAR);
+
+        return Math.max(startWeek, endWeek);
+    }
+
+    public static boolean isNeed(int year){
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(year,0,1);
+        if(calendar.get(Calendar.DAY_OF_WEEK)-1 == 1)
+            return false;
+        return true;
+
+    }
+
+    /**
+     * 根据输入的起止日期返回是当年的第几周
+     *
+     * @param startDate
+     * @param endDate
+     */
+    public static int getWeekOfYear(Date startDate, Date endDate) {
+        Calendar start = Formatter.getCurCalendar();
+        start.setTime(startDate);
+        Calendar end = Formatter.getCurCalendar();
+        end.setTime(endDate);
+        return getWeekOfYear(start, end);
+    }
+
+    /**
+     * 根据输入的起止日期返回是当年的第几周
+     *
+     * @param startStr
+     * @param endStr
+     * @param format
+     */
+    public static int getWeekOfYear(String startStr, String endStr, ThreadLocal<DateFormat> format) {
+        try {
+            Date start = format.get().parse(startStr);
+            Date end = format.get().parse(endStr);
+            return getWeekOfYear(start, end);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public static Calendar getCurCalendar() {
+        return Calendar.getInstance(Formatter.chinaZone, Locale.CHINA);
+    }
+
+    /**
+     * 今天，时间差 ≤ 1分钟，显示 ”刚刚“
+     * 今天，1分钟＜时间差＜1小时，显示 “n分钟前”
+     * 今天，1小时＜时间差 ≤ 6小时，显示 “n小时前”
+     * 今天，时间差＞6小时，显示 “今天 hh:mm”
+     * 昨天，显示 “昨天 hh:mm”
+     * 今年内，非昨天，显示 “mm-dd”
+     * 非今年，显示 “yyyy-mm-dd”
+     *
+     * @param time 格式 yyyy-MM-dd HH:mm:ss
+     */
+    public static String showWechatDate(String time) {
+        if (TextUtils.isEmpty(time)) {
+            return "";
+        }
+        try {
+            Calendar currentCal = getCurrentCalendar();
+            Calendar timeCal = getCurrentCalendar();
+            Date date = YYYY_MM_DD_HHMMSS.get().parse(time);
+            timeCal.setTime(date);
+            long diffSec = (currentCal.getTimeInMillis() - date.getTime()) / 1000;
+            long diffMin = diffSec / 60;
+            long diffHou = diffMin / 60;
+            Calendar yestCal = getCurCalendar();
+            yestCal.add(Calendar.DAY_OF_YEAR, -1);
+            int yesDiffYear = yestCal.get(Calendar.YEAR) - timeCal.get(Calendar.YEAR);
+            boolean isYestoday = yestCal.get(Calendar.DAY_OF_YEAR) == timeCal.get(Calendar.DAY_OF_YEAR) && yesDiffYear == 0;
+            int diffYear = currentCal.get(Calendar.YEAR) - timeCal.get(Calendar.YEAR);
+            boolean isToday = currentCal.get(Calendar.DAY_OF_YEAR) == timeCal.get(Calendar.DAY_OF_YEAR) && diffYear == 0;
+            if (diffSec <= 60 && isToday) {
+                return "刚刚";
+            } else if (diffMin <= 60 && isToday) {
+                return diffMin + "分钟前";
+            } else if (diffHou <= 6 && isToday) {
+                return diffHou + "小时前";
+            } else if (diffHou <= 24 && isToday) {
+                return "今天 " + HHMM.get().format(date);
+            } else if (isYestoday) {
+                return "昨天 " + HHMM.get().format(date);
+            } else if (diffYear == 0) {
+                return MM_DD.get().format(date);
+            } else {
+                return YYYY_MM_DD.get().format(date);
+            }
+        } catch (Exception e) {
+            return time.split(" ")[0];
+        }
+    }
+
+    /**
+     * 今天
+     * 显示“今天 hh:mm” 。如：今天 22:33
+     * 昨天
+     * 显示“昨天 hh:mm”。如：昨天 13:04
+     * 今年内，非昨天
+     * 显示“m月d日 hh:mm”。如：8月15日 08:15
+     * 非今年内
+     * 显示“yyyy年m月d日”。如：2015年6月23日
+     * 聊天界面时间戳
+     */
+    public static String showChatDetailMsgTime(String time) {
+        try {
+            Calendar currentCal = getCurrentCalendar();
+            Calendar timeCal = getCurrentCalendar();
+            Date date = YYYY_MM_DD_HHMMSS.get().parse(time);
+            timeCal.setTime(date);
+            long diffSec = (currentCal.getTimeInMillis() - date.getTime()) / 1000;
+            long diffMin = diffSec / 60;
+            long diffHou = diffMin / 60;
+            int diffYear = currentCal.get(Calendar.YEAR) - timeCal.get(Calendar.YEAR);
+            Calendar yestCal = getCurCalendar();
+            yestCal.add(Calendar.DAY_OF_YEAR, -1);
+            int yesDiffYear = yestCal.get(Calendar.YEAR) - timeCal.get(Calendar.YEAR);
+            boolean isYestoday = yestCal.get(Calendar.DAY_OF_YEAR) == timeCal.get(Calendar.DAY_OF_YEAR) && yesDiffYear == 0;
+            boolean isToday = currentCal.get(Calendar.DAY_OF_YEAR) == timeCal.get(Calendar.DAY_OF_YEAR) && diffYear == 0;
+            if (diffHou <= 24 && isToday) {
+                return "今天 " + HHMM.get().format(date);
+            } else if (isYestoday) {
+                return "昨天 " + HHMM.get().format(date);
+            } else if (diffYear == 0) {
+                return MM_DD_HHMM.get().format(date);
+            } else {
+                return YYYY_MM_DD_HHMM.get().format(date);
+            }
+        } catch (Exception e) {
+            return time.split(" ")[0];
+        }
+    }
+
+
+    /**
+     * 获取后一天字符串
+     *
+     * @param n    格式：date之后的n天
+     * @param date 格式：YYYY-MM-DD
+     * @return 返回后一天日期字符串  格式：YYYY-MM-DD
+     */
+    public static String getAfterNDate(int n, String date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String sd = null;
+        try {
+            Long beginUseTime = sdf.parse(date).getTime();
+            beginUseTime += n * 24 * 60 * 60 * 1000;
+            sd = sdf.format(new Date(beginUseTime)); //把时间戳转为日期
+        } catch (Exception e) {
+
+        }
+        return sd;
+    }
+
+    /**
+     *
+     * @param yyyy_MM_dd 格式：YYYY-MM-DD
+     * @return
+     */
+    public static String parseXun(String yyyy_MM_dd){
+        if(TextUtils.isEmpty(yyyy_MM_dd)){
+            return "";
+        }
+        String[] dates = yyyy_MM_dd.split("-");
+        if(dates != null && dates.length == 3){
+            if(dates[2].equals("05")){
+                return dates[0]+"年"+dates[1]+"月上旬";
+            }else if(dates[2].equals("15")){
+                return dates[0]+"年"+dates[1]+"月中旬";
+            } else {
+                return dates[0]+"年"+dates[1]+"月下旬";
+            }
+        }
+        return "";
+    }
+
+    /**
+     * "2018-01-23" 整数转换 "1月23日".
+     */
+    public static String yyyyMMddIntToCNMonthDay(String yyyyMMdd) {
+        Date date;
+        try {
+            date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(yyyyMMdd);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return "";
+        }
+        return parse(date, Formatter.CN_MD);
+    }
+
+    /**
+     * 获取两个日期之间的所有日期(字符串格式, 按天计算)
+     * @param border 是否包含起止日期
+     * @return
+     */
+    public static List<String> getBetweenDays(String start, String end,ThreadLocal<DateFormat> formFormat,ThreadLocal<DateFormat> toFormat,boolean border) {
+        List<String> result = new ArrayList<String>();
+        if(border)
+            result.add(Formatter.parse(start,formFormat,toFormat));
+        Calendar caStart = getCalendar(start,formFormat);
+        caStart.add(Calendar.DAY_OF_YEAR, 1);
+        Calendar caEnd = getCalendar(end,formFormat);
+        while (caStart.before(caEnd)) {
+            result.add(parse(caStart,toFormat));
+            caStart.add(Calendar.DAY_OF_YEAR, 1);
+        }
+        if (border)
+            result.add(Formatter.parse(end,formFormat,toFormat));
+        return result;
+    }
+
+    public static Calendar getBetweenDayCalendar(String dayStr,int day,ThreadLocal<DateFormat> format){
+        Calendar cal = Formatter.getCalendar(dayStr, format);
+        cal.add(Calendar.DAY_OF_MONTH, day);
+        return cal;
+    }
+
+
+    /**
+     * 获取两个日期之间的所有小时(字符串格式, 按小时计算)
+     *
+     * @param start
+     * @param end
+     * @return
+     */
+    public static List<String> getBetweenHours(Date start, Date end) {
+        List<String> result = new ArrayList<String>();
+
+        Calendar tempStart = Calendar.getInstance();
+        tempStart.setTime(start);
+
+        tempStart.add(Calendar.HOUR_OF_DAY, 1);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:00");
+        Calendar tempEnd = Calendar.getInstance();
+        tempEnd.setTime(end);
+        result.add(sdf.format(start));
+        while (tempStart.before(tempEnd)) {
+            result.add(sdf.format(tempStart.getTime()));
+            tempStart.add(Calendar.HOUR_OF_DAY, 1);
+        }
+        return result;
+    }
+
+    public static String todayArgs(){
+        return Formatter.parse(Calendar.getInstance(Formatter.chinaZone, Locale.CHINA), Formatter.YYYYMMDD);
+    }
+
+    public static boolean isTodayIn(Calendar startCalendar,Calendar endCalendar){
+        Calendar now = Formatter.getCurrentCalendar();
+        if(startCalendar == null || endCalendar == null)
+            return false;
+        //这个逻辑区间问题，谁遇到谁去debug吧
+//        int before = getDateSpace(startCalendar,now);
+//        int after = getDateSpace(now,endCalendar);
+//        Log.e("smile","before = "+before+" ,,, after = "+after);
+        return getDateSpace(startCalendar,now)>=0 && getDateSpace(now,endCalendar)>=0;
+    }
+
+    public static boolean isDayIn(Calendar curCalendar,Calendar startCalendar,Calendar endCalendar){
+        if(startCalendar == null || endCalendar == null)
+            return false;
+        //这个逻辑区间问题，谁遇到谁去debug吧
+//        int before = getDateSpace(startCalendar,now);
+//        int after = getDateSpace(now,endCalendar);
+//        Log.e("smile","before = "+before+" ,,, after = "+after);
+        return getDateSpace(startCalendar,curCalendar)>=0 && getDateSpace(curCalendar,endCalendar)>=0;
+    }
+
+}
+package com.sankuai.moviepro.views.custom_views.chart;
+
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
+
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.charts.MovieLineChart;
+import com.github.mikephil.charting.charts.MoviePieChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.utils.Utils;
+import com.sankuai.moviepro.R;
+import com.sankuai.moviepro.common.utils.DimenUtils;
+import com.sankuai.moviepro.common.utils.Formatter;
+import com.sankuai.moviepro.common.utils.TypefaceHelper;
+import com.sankuai.moviepro.config.Consts;
+import com.sankuai.moviepro.date_choose.bean.CustomDate;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+import androidx.annotation.IntDef;
+
+/**
+ * User: tianchao
+ * Date: 16/4/29
+ * Time: 下午2:00
+ * PS: 学如逆水行舟，不进则退
+ * <p>
+ * 图表类的一些通用参数设置
+ */
+public class ChartUtils {
+    public static final int UNIT_GE = 0;
+    public static final int UNIT_SHI_WAN = 1;
+    public static final int UNIT_JIU_YI = 2;
+    public static final int UNIT_FIX_WAN = 3;//有些地方如票房趋势，后台返回的数据就已经是处理过万亿的数据
+    public static final int UNIT_FIX_YI = 4;//同上
+    public static int[] PIECHART_COLORS = new int[]{R.color.hex_ff574d, R.color.hex_3e8ff4, R.color.hex_2bc7ff, R.color.hex_20d8dc, R.color.hex_35cd6a,
+            R.color.hex_88dd2c, R.color.hex_ffef00, R.color.hex_ffd000, R.color.hex_fbaa00, R.color.hex_fa7900, R.color.hex_d02e0e, R.color.hex_7e5cff};
+    public static int[] LINECHART_COLORS = new int[]{R.color.hex_eb0029, R.color.chart_yellow, R.color.hex_0A56DD,R.color.hex_008833, R.color.hex_9833ff,
+            R.color.hex_e300cc, R.color.hex_008a99, R.color.hex_c7622a,R.color.hex_ff197d,R.color.hex_6F6060};
+
+    public static void initSingleLineDataSet(LineDataSet set, Resources resources) {
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set.setColor(resources.getColor(R.color.brand_color));
+        set.setLineWidth(1.5f);
+        set.setDrawCircles(false);
+        if (Build.VERSION.SDK_INT >= 18) {
+            // fill drawable only supported on api level 18 and above
+            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{Color.parseColor("#33eb0029"),Color.parseColor("#00eb0029")});//创建drawable
+            set.setFillDrawable(gd);
+        }
+        else {
+            set.setFillColor(resources.getColor(R.color.brand_color));
+        }
+        set.setDrawCircleHole(false);
+        set.setDrawValues(false);
+        set.setMode(LineDataSet.Mode.LINEAR);
+        set.setDrawFilled(true);
+        set.setDrawHorizontalHighlightIndicator(false);
+    }
+
+
+    public static void initMutLineDataSet(LineDataSet dataSet, Resources resources, int position) {
+//        dataSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        int[] colors = LINECHART_COLORS;
+        dataSet.setColor(resources.getColor(colors[position % colors.length]));//线的颜色
+        dataSet.setLineWidth(1.5f);//线的宽度
+//        if (dataSet.getEntryCount() == 1) {
+//            dataSet.setCircleSize(2f);//只有一个数据的时候显示点
+//        } else {
+//            dataSet.setCircleSize(0f);
+//        }
+        dataSet.setDrawCircles(false);
+        dataSet.setMode(LineDataSet.Mode.LINEAR);
+        dataSet.setDrawValues(false);
+//        dataSet.setCircleColor(resources.getColor(colors[position % colors.length]));
+        dataSet.setHighLightColor(resources.getColor(R.color.hex_f34d41));
+        dataSet.setHighlightEnabled(true);
+//        dataSet.setCubicIntensity(0);
+        dataSet.setDrawHorizontalHighlightIndicator(false);
+    }
+
+
+    /**
+     * 初始化chart设置
+     */
+    public static void initLineChart(MovieLineChart chart, Resources resources,Context context) {
+
+        int baseColor = resources.getColor(R.color.hex_cccccc);
+        chart.setDescription(null);
+
+        Legend legend = chart.getLegend();
+        legend.setEnabled(false);
+
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setTextSize(9f);
+        xAxis.setTextColor(resources.getColor(R.color.hex_777777));
+        xAxis.setEnabled(true);
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        //现实表现为legend距离x轴的距离
+        xAxis.setYOffset(10);
+        xAxis.setDrawAxisLine(true);
+        xAxis.setDrawGridLines(false);
+        xAxis.setGranularityEnabled(true);
+        xAxis.setAxisLineColor(Color.parseColor("#DDDDDD"));
+        xAxis.setTypeface(TypefaceHelper.get(context, "fonts/maoyanheiti_light.otf"));
+
+
+        YAxis leftAxis = chart.getAxisLeft();
+        leftAxis.setXOffset(10);
+        leftAxis.setTextSize(9);
+        leftAxis.setYOffset(2.5f);
+        leftAxis.setTextColor(resources.getColor(R.color.hex_777777));
+        leftAxis.setDrawAxisLine(false);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setGridColor(baseColor);
+        leftAxis.enableGridDashedLine(6, 8, 0);
+        leftAxis.setAxisMinValue(0);
+        leftAxis.setLabelCount(6, true);
+        leftAxis.setValueFormatter(new ProLineChartYValuesFormatter());
+        leftAxis.setAxisLineColor(Color.parseColor("#DDDDDD"));
+        leftAxis.setTypeface(TypefaceHelper.get(context, "fonts/maoyanheiti_light.otf"));
+
+        YAxis rightAxis = chart.getAxisRight();
+        rightAxis.setEnabled(false);
+        rightAxis.setDrawAxisLine(false);
+
+        chart.setDrawBorders(false);
+        chart.setOnlyTopBorder(true);
+        chart.setBorderColor(baseColor);
+        chart.setBorderWidth(0.5f);
+        chart.setDrawGridBackground(false);
+        chart.setScaleEnabled(false);
+        //设置图表最上顶线跟图表布局的间隔，注意单位已经是dp
+        chart.setExtraTopOffset(20);
+        chart.setDoubleTapToZoomEnabled(false);
+        //因为legend距离加大了，所以图表的底部跟组件的边距也要加大，否则会吞字
+        chart.setExtraBottomOffset(12);
+
+
+        chart.setNoDataText("暂无数据");
+        chart.setNeedChangeLineOffset(true);
+        chart.setExtraLeftOffset(12.5f);       // ui要求距离left 15dp，但是图标画的本来就有间距，这里的12.5f纯属凑距离
+
+        MovieLineChart.MarkerData markerData = chart.getMarkerData();
+        markerData.highlightLineWidth = DimenUtils.dp2px(0.5f);
+        markerData.hightColor = Color.parseColor("#FF777777");
+        markerData.highlightCircleColor = Color.parseColor("#FFEB0029");
+        markerData.highlightCircleWidth = Utils.convertDpToPixel(1.5f);
+        markerData.highlightCircleRadius = DimenUtils.dp2px(5f);
+    }
+
+
+
+    /**
+     * 初始化chart设置
+     */
+    public static void initBarChart(BarChart chart, Resources resources) {
+        chart.setDrawValueAboveBar(true);
+        chart.setDescription(null);
+        chart.setTouchEnabled(false);
+        chart.setDrawGridBackground(false);
+        chart.setDrawBorders(true);
+
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+        xAxis.setTextColor(resources.getColor(R.color.hex_8F9296));
+        xAxis.setTextSize(10);
+
+        YAxis leftAxis = chart.getAxisLeft();
+        leftAxis.setLabelCount(5, false);
+        leftAxis.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART);
+        leftAxis.setSpaceTop(15f);
+        leftAxis.setTextColor(resources.getColor(R.color.hex_8F9296));
+        leftAxis.setTextSize(10);
+        leftAxis.setAxisLineColor(resources.getColor(R.color.hex_d8d8d8));
+        leftAxis.setAxisMinValue(0);
+        leftAxis.enableGridDashedLine(6, 8, 0);
+        leftAxis.setGridColor(resources.getColor(R.color.hex_cccccc));
+
+        YAxis rightAxis = chart.getAxisRight();
+        rightAxis.setEnabled(false);
+
+        Legend l = chart.getLegend();
+        l.setEnabled(false);
+        chart.setBorderColor(resources.getColor(R.color.hex_d8d8d8));
+    }
+
+    public static void initBarDataSet(BarDataSet dataSet) {
+        dataSet.setDrawValues(true);
+        dataSet.setValueTextColor(Color.parseColor("#8F9296"));
+        dataSet.setValueTextSize(10);
+    }
+
+    public static void initPieChart(MoviePieChart pieChart) {
+        pieChart.dimleaderDescData.valueTextSize = DimenUtils.sp2px(12);
+        pieChart.setUsePercentValues(true);
+        pieChart.setDescription(null);
+        pieChart.setDrawHoleEnabled(true);
+        pieChart.setHoleRadius(60);
+        pieChart.setTransparentCircleRadius(65);
+        pieChart.setTransparentCircleColor(Color.parseColor("#000000"));
+        pieChart.setTransparentCircleAlpha(25);
+        pieChart.setRotationEnabled(false);
+        pieChart.dimleaderDescData.maxDimleaderCount = 5;
+        pieChart.dimleaderDescData.nameTextSize = DimenUtils.sp2px(12);
+        pieChart.setDrawSliceText(false);
+    }
+
+    public static SpannableString generateCenterSpannableText(Context context, MoviePieChart pieChart, int index) {
+        PieEntry entry = pieChart.getData().getDataSet().getEntryForIndex(index);
+        String str = entry.getLabel();
+        String[] array = str.split("-");
+        String name = array != null ? array[0] : str;
+        if (name.length() > 5) {
+            name = name.substring(0, 5) + "...";
+        }
+        float val = entry.getY();
+        String value = (array != null && array.length > 1 ? array[1] : val) + pieChart.dimleaderDescData.yUnit + "\n" + name + pieChart.dimleaderDescData.xUnit;
+        SpannableString s = new SpannableString(value);
+        s.setSpan(new RelativeSizeSpan(1.7f), 0, 5, 0);
+        s.setSpan(new StyleSpan(Typeface.NORMAL), 0, 5, 0);
+        s.setSpan(new ForegroundColorSpan(context.getResources().getColor(ChartUtils.PIECHART_COLORS[index])), 0, 5, 0);
+        s.setSpan(new ForegroundColorSpan(context.getResources().getColor(R.color.hex_666666)), 5, s.length(), 0);
+        s.setSpan(new RelativeSizeSpan(0.9f), 5, s.length(), 0);
+        return s;
+    }
+
+    public static float revertRate(String rateStr) {
+        try {
+            return Float.parseFloat(rateStr.replace("%", ""));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 最高数据超过30%的时候，每10%一行，最高向上取10，如53%就取到60%；低于30%的时候，5%一行，最高向上取5，比如最高23，坐标轴就取25%
+     */
+    public static int getUpMax(int max) {
+        if (max >= 30) {
+            max = (max / 10 + 1) * 10;
+        } else {
+            max = (max / 5 + 1) * 5;
+        }
+        return max;
+    }
+
+    public static List<String> getXValuesByDate(int type, CustomDate currentDate, ThreadLocal<DateFormat> format) {
+        Calendar dateStart = currentDate.startCalendar;
+        Calendar dateEnd = currentDate.endCalendar;
+        long timeStart = dateStart.getTimeInMillis();
+        long timeEnd = dateEnd.getTimeInMillis();
+        int count = 0;
+        long space = 0;
+        switch (type) {
+            case CustomDate.TYPE_CUSTOM:
+                space = Consts.MILLS_OF_DAY;
+                count = (int) ((timeEnd - timeStart) / space) + 1;
+                break;
+            case CustomDate.TYPE_MUTIL_WEEK:
+                count = (int) ((timeEnd - timeStart) / Consts.MILLS_OF_WEEK) + 1;
+                int year = currentDate.year;
+                return getWeekTypeXValues(count, year, currentDate.week, currentDate.endWeek);
+            case CustomDate.TYPE_MUTIL_MONTH:
+                space = Consts.MILLS_OF_MONTH;
+                count = (int) ((timeEnd - timeStart) / space) + 1;
+                return getMonthTypeXValues(timeStart, count);
+            case CustomDate.TYPE_MUTIL_YEAR:
+                space = Consts.MILLS_OF_YEAR;
+                count = dateEnd.get(Calendar.YEAR) - dateStart.get(Calendar.YEAR) + 1;
+                break;
+        }
+        return getXValues(count, timeStart, space, format);
+    }
+
+    public static List<String> getXValuesByDate(int type, CustomDate currentDate) {
+        return getXValuesByDate(type, currentDate, Formatter.YYYYMMDD);
+    }
+
+    public static List<String> getXValues(int type, CustomDate currentDate) {
+        Calendar dateStart = currentDate.startCalendar;
+        Calendar dateEnd = currentDate.endCalendar;
+        long timeStart = dateStart.getTimeInMillis();
+        long timeEnd = dateEnd.getTimeInMillis();
+        int count = 0;
+        long space = 0;
+        switch (type) {
+            case CustomDate.TYPE_CUSTOM:
+                space = Consts.MILLS_OF_DAY;
+                count = (int) ((timeEnd - timeStart) / space) + 1;
+                break;
+            case CustomDate.TYPE_MUTIL_WEEK:
+                space = Consts.MILLS_OF_WEEK;
+                count = currentDate.endWeek - currentDate.week + 1;
+                break;
+            case CustomDate.TYPE_MUTIL_MONTH:
+                space = Consts.MILLS_OF_MONTH;
+                count = (int) ((timeEnd - timeStart) / space) + 1;
+                return getMonthTypeXValues(timeStart, count);
+            case CustomDate.TYPE_MUTIL_YEAR:
+                space = Consts.MILLS_OF_YEAR;
+                count = dateEnd.get(Calendar.YEAR) - dateStart.get(Calendar.YEAR) + 1;
+                break;
+        }
+        return getXValues(count, timeStart, space);
+    }
+
+
+    /**
+     * 计算两个日期之间相差的天数,默认YYYYMMDD
+     *
+     * @return
+     */
+
+    public static List<String> getXValues(int count, long timeStart, long space, ThreadLocal<DateFormat> format) {
+        List<String> values = new ArrayList<>();
+
+        Calendar calendar = Formatter.getCurrentCalendar();
+        calendar.setTimeInMillis(timeStart);
+        for (int i = 0; i < count; i++) {
+            values.add(Formatter.parse(timeStart, format));
+            timeStart += space;
+            calendar.setTimeInMillis(timeStart);
+        }
+        return values;
+    }
+
+    public static List<String> getXValues(int count, long timeStart, long space) {
+
+        return getXValues(count, timeStart, space, Formatter.YYYYMMDD);
+    }
+
+    /**
+     * 计算两个日期之间相差的天数,周模式
+     *
+     * @return
+     */
+    public static List<String> getWeekTypeXValues(int count, int startYear, int startWeek, int endWeek) {
+        List<String> values = new ArrayList<>();
+        if (endWeek < startWeek) {
+            count = count - endWeek;
+            for (int i = 0; i < count; i++) {
+                values.add(startYear + "年 第" + (startWeek + i) + "周");
+            }
+            startYear = startYear + 1;
+            for (int i = 1; i <= endWeek; i++) {
+                values.add(startYear + "年 第" + i + "周");
+            }
+        } else {
+            for (int i = startWeek; i <= endWeek; i++) {
+                values.add(startYear + "年 第" + i + "周");
+            }
+        }
+        return values;
+    }
+
+    /**
+     * 计算两个日期之间相差的天数,月模式
+     *
+     * @return
+     */
+    public static List<String> getMonthTypeXValues(long timeStart, int count) {
+        List<String> values = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timeStart);
+        for (int i = 0; i < count; i++) {
+            values.add(Formatter.parse(calendar, Formatter.YYYY_MM_DD).replaceAll("-", ""));
+            calendar.add(Calendar.DAY_OF_YEAR, 31);
+        }
+        return values;
+    }
+
+    /**
+     * 计算出整数Y轴最大值
+     */
+    public static int getIntMaxYValueByDataSets(List<ILineDataSet> dataSets, int labelCount) {
+        int value = (int) getMaxYValueByDataSets(dataSets);
+        if (labelCount <= 0 || labelCount % (labelCount - 1) == 0) {
+            return value;
+        } else {
+            return value - (value % (labelCount - 1)) + labelCount - 1;
+        }
+    }
+
+    /**
+     * 计算Y轴最大值
+     */
+    public static float getMaxYValueByDataSets(List<ILineDataSet> dataSets) {
+        float max = 0;
+        for (ILineDataSet dataSet : dataSets) {
+            dataSet.calcMinMax();
+        }
+        for (ILineDataSet dataSet : dataSets) {
+            max = dataSet.getYMax() > max ? dataSet.getYMax() : max;
+        }
+        int unit = getValueUnit(max);
+        float upValue = getValueWithUnit(max,unit);
+        upValue = compareUpValue(upValue);
+        if(unit == UNIT_SHI_WAN){
+            upValue = upValue * 10000f;
+        }else if(unit == UNIT_JIU_YI){
+            upValue = upValue * 100000000f;
+        }
+        if (upValue < 5) {
+            upValue = 5;
+        }
+        return upValue;
+    }
+
+    /**
+     * 最高刻度数值(0-10]，则最高刻度取10，五等分
+     * 数值（10-100]，最高刻度取10的整倍数，五等分
+     * 数值（100-1000]，最高刻度取100的整倍数，五等分
+     * 数值（1000-10000]，最高刻度取1000的整倍数，五等分
+     * 数值超过一万，取万的整倍数
+     */
+    private static float compareUpValue(float upValue) {
+        if(upValue < 5 ){
+            upValue = 5;
+        }else if(upValue >=5 && upValue < 10){
+            upValue =  10;
+        }else{
+            int gap = (int) (5*Math.pow(10,String.valueOf((int)upValue).length()-2));
+            int count = (int) (upValue/gap + 1);
+            if(count%2 == 1 && count > 10){
+                count += 1;
+            }
+            upValue = count*gap;
+        }
+        return upValue;
+    }
+
+
+    /**
+     *
+     1、一般正常展示（目前最大100000）
+     2、过10万除1万，刻度展示xx万（目前最大90000万）
+     3、过9亿展示10亿，除1亿刻度展示xx亿（目前最大700亿）
+     0不带单位
+     */
+    @UNIT
+    public static int getValueUnit(float maxValue) {
+        if (maxValue > 900000000) {
+            return UNIT_JIU_YI;
+        } else if (maxValue > 100000) {//十万
+            return UNIT_SHI_WAN;
+        } else {
+            return UNIT_GE;
+        }
+    }
+
+    /**
+     * 根据提供的值和单位计算除去单位之后的值
+     *
+     * @param value
+     */
+    public static float getValueWithUnit(float value,int unit) {
+        if (unit == UNIT_SHI_WAN) {
+            return value / 10000f;
+        } else if (unit == UNIT_JIU_YI) {
+            return value / 100000000f;
+        } else {
+            return value;
+        }
+    }
+
+    @IntDef({UNIT_GE, UNIT_SHI_WAN, UNIT_JIU_YI,UNIT_FIX_WAN,UNIT_FIX_YI})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface UNIT {
+    }
+    //获取合适的label坐标个数，9是因为横坐标最多显示9个，再多就挤不下了，整个算法是我根据UI效果怼出来的，其它数值没啥意义
+    public static int getLabelNum(int labelSize){
+        if(labelSize <= 9)
+            return labelSize;
+
+        int div = -1;
+        for(int i = 9 ;i >= 5 ;i--){
+            if(labelSize % i == 0 ){
+                div = i;
+                break;
+            }
+        }
+        if(div != -1){
+            return div;
+        }else{
+            for(int j = 9; j >= 5;j--){
+                if(labelSize /j >= 2 && labelSize % j < (labelSize / j)){
+                    div = j;
+                    break;
+                }
+            }
+            return div;
+        }
+    }
+}((ProLineChartYValuesFormatter) mChart.getAxisLeft().getValueFormatter()).setUnit(unit);
+
+ int unit = ChartUtils.getValueUnit(maxValue);
+        ((ProLineChartYValuesFormatter) mChart.getAxisLeft().getValueFormatter()).setUnit(unit);
+        mChart.getXAxis().setValueFormatter(new ProXValueFormatter(xValueList));
+        mChart.getXAxis().setLabelCount(ChartUtils.getLabelNum(xValueList.size()),false);
+        mChart.setData(lineData);
+		public class ProLineChartYValuesFormatter implements IAxisValueFormatter {
+    @ChartUtils.UNIT
+    private int unit = ChartUtils.UNIT_GE;
+
+    public void setUnit(@ChartUtils.UNIT int unit) {
+        this.unit = unit;
+    }
+
+    @Override
+    public String getFormattedValue(float value, AxisBase axis) {
+        if (unit == ChartUtils.UNIT_FIX_WAN) {
+            return (int) value + "万";
+        } else if (unit == ChartUtils.UNIT_FIX_YI) {
+            return (int) value + "亿";
+        }
+        int result = (int) ChartUtils.getValueWithUnit(value, unit);
+        if (unit == ChartUtils.UNIT_SHI_WAN) {
+            return result + "万";
+        } else if (unit == ChartUtils.UNIT_JIU_YI) {
+            return result + "亿";
+        } else {
+            return String.valueOf(result);
+        }
+    }
+
+
+}public class ProXValueFormatter implements IAxisValueFormatter {
+
+    private String[] values;
+
+    public ProXValueFormatter(String[] values) {
+        this.values = values;
+    }
+
+    public ProXValueFormatter(List<String> valuesList) {
+        if (valuesList != null) {
+            values = new String[valuesList.size()];
+            valuesList.toArray(values);
+        }
+    }
+
+    @Override
+    public String getFormattedValue(float value, AxisBase axis) {
+        if (value >= values.length || (int) Math.floor(value) < 0) {
+            return "";
+        }
+        return values[(int) Math.floor(value)];
+    }
+
+    public void setValues(String[] values) {
+        this.values = values;
+    }
+}
+ private LineData genBoxLine(ArrayList<SimpleMovieBox> boxList) {
+        if (CollectionUtils.isEmpty(boxList))
+            return null;
+        MovieLineChart.MarkerData markerData = mChart.getMarkerData();
+        markerData.highlightCircleColor = Color.parseColor("#FFEB0029");
+        int num = 0;
+        if (dateList == null)
+            return null;
+        List<Entry> yVals = new ArrayList<>();
+        xValueList.clear();
+        for (int i = 0; i < dateList.size(); i++) {
+            SimpleMovieBox box = null;
+            if (num < boxList.size())
+                box = boxList.get(num);
+            if (box != null && String.valueOf(box.showDate).equals(dateList.get(i))) {
+                if (box.splitBoxInfo.equals("--")) {
+                    yVals.add(new Entry(i, Float.NaN, box));
+                } else {
+                    yVals.add(new Entry(i, box.splitBox, box));
+                }
+                num++;
+            } else {
+                box = new SimpleMovieBox(0l, "--", 0l, "--", Integer.parseInt(dateList.get(i)));
+                yVals.add(new Entry(i, Float.NaN, box));
+            }
+            xValueList.add(Formatter.parse(dateList.get(i), Formatter.YYYYMMDD, Formatter.MVD));
+        }
+
+        LineData lineData = new LineData(getBoxDataSet(yVals, "boxData"));
+        lineData.setValueTextSize(12f);
+        int dashIndex = -1;
+
+        String today = Formatter.parse(Formatter.getCurrentCalendar(), Formatter.YYYYMMDD);
+
+        for (int i = 0; i < yVals.size(); i++) {
+            SimpleMovieBox movieBox = (SimpleMovieBox) yVals.get(i).getData();
+            if (i == 0 && String.valueOf(movieBox.showDate).compareTo(today) > 0) {
+                dashIndex = 0; //如果上来预售日期就大于今天，直接置0 跳出循环
+                break;
+            }
+            if (String.valueOf(movieBox.showDate).equals(today)) {
+                dashIndex = i;
+            }
+        }
+        float maxValue = ChartUtils.getMaxYValueByDataSets(lineData.getDataSets());
+        mChart.getAxisLeft().setAxisMaxValue(maxValue);
+        int unit = ChartUtils.getValueUnit(maxValue);
+        ((ProLineChartYValuesFormatter) mChart.getAxisLeft().getValueFormatter()).setUnit(unit);
+        mChart.getXAxis().setValueFormatter(new ProXValueFormatter(xValueList));
+        mChart.getXAxis().setLabelCount(ChartUtils.getLabelNum(xValueList.size()),false);
+        mChart.setData(lineData);
+        if (dashIndex < 0) {
+            mChart.highlightValue(0, 0);
+            dashIndex = xValueList.size()-1;
+        }else{
+            mChart.highlightValue(dashIndex, 0);
+        }
+        mChart.setDashIndex(dashIndex);
+        mChart.invalidate();
+        return lineData;
+    }
+package com.sankuai.moviepro.views.block.moviedetail;
+
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import androidx.annotation.Nullable;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.widget.NestedScrollView;
+
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
+import android.text.TextUtils;
+import android.util.AttributeSet;
+import android.util.Pair;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.TextView;
+
+import com.github.mikephil.charting.charts.MovieLineChart;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
+import com.github.mikephil.charting.utils.Utils;
+import com.sankuai.moviepro.R;
+import com.sankuai.moviepro.common.utils.CollectionUtils;
+import com.sankuai.moviepro.common.utils.DimenUtils;
+import com.sankuai.moviepro.common.utils.Formatter;
+import com.sankuai.moviepro.common.views.DrawableCenterTextView;
+import com.sankuai.moviepro.date_choose.bean.CustomDate;
+import com.sankuai.moviepro.model.entities.moviedetail.detail.JumpUrlConfig;
+import com.sankuai.moviepro.model.entities.moviedetail.detail.ReleaseTimeData;
+import com.sankuai.moviepro.model.entities.moviedetail.detail.SimpleMovieBox;
+import com.sankuai.moviepro.modules.analyse.AnalyseUtils;
+import com.sankuai.moviepro.modules.knb.KnbNavigator;
+import com.sankuai.moviepro.utils.revert.ComponentDataRevertUtils;
+import com.sankuai.moviepro.views.activities.movie.MovieDetailActivity;
+import com.sankuai.moviepro.views.block.fliter.filterscroll.ScrollItemComponent;
+import com.sankuai.moviepro.views.custom_views.chart.ChartUtils;
+import com.sankuai.moviepro.views.custom_views.chart.ProLineChartYValuesFormatter;
+import com.sankuai.moviepro.views.custom_views.chart.ProXValueFormatter;
+import com.sankuai.moviepro.views.custom_views.textview.MaoyanTypeface;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static android.view.Gravity.NO_GRAVITY;
+
+// 电影详情页的日期票房模块
+public class MDBoxBlock extends LinearLayout implements View.OnClickListener {
+
+    private MovieLineChart mChart;
+    public List<String> xValueList = new ArrayList<>();
+    public List<String> dateList;
+    ArrayList<SimpleMovieBox> mBoxList = new ArrayList<>();
+    LinearLayout itemContainer, operate1, operate2;
+    private MovieDetailActivity mContext;
+    TextView boxBtn, showBtn, box2Btn, show2Btn;
+    ConstraintLayout toBox;
+    DrawableCenterTextView datechoose;
+    BoxMarkerView markerView;
+    String movieId;
+    KnbNavigator knbNavigator;
+    List<ReleaseTimeData> timeList = new ArrayList<>();
+    PopupWindow popupWindow;
+    Pair<Integer,ReleaseTimeData> selTime;
+    private JumpUrlConfig jumpUrlConfig;
+
+    public MDBoxBlock(Context context) {
+        super(context);
+        initView();
+    }
+
+    public MDBoxBlock(Context context, @Nullable AttributeSet attrs) {
+        super(context, attrs);
+        initView();
+    }
+
+    public MDBoxBlock(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+        initView();
+    }
+
+    private void initView() {
+        inflate(getContext(), R.layout.md_box_block, this);
+        setBottomMargin(30);
+        operate1 = findViewById(R.id.operate1);
+        operate2 = findViewById(R.id.operate2);
+
+        boxBtn = operate1.findViewById(R.id.heat_day);
+        showBtn = operate1.findViewById(R.id.heat_time);
+        boxBtn.setText(R.string.boxoffice_day);
+        showBtn.setText(R.string.arrangement_day);
+        boxBtn.setSelected(true);
+        boxBtn.setOnClickListener(this);
+        showBtn.setOnClickListener(this);
+
+        box2Btn = operate2.findViewById(R.id.heat_day);
+        show2Btn = operate2.findViewById(R.id.heat_time);
+        box2Btn.setText(R.string.boxoffice_day);
+        show2Btn.setText(R.string.arrangement_day);
+        box2Btn.setOnClickListener(this);
+        show2Btn.setOnClickListener(this);
+        box2Btn.setSelected(true);
+        datechoose = findViewById(R.id.date_choose);
+
+        Drawable dateChooseDrawable = getContext().getDrawable(R.drawable.arrow_down_black);
+        dateChooseDrawable.setBounds(0, 0, DimenUtils.dp2px(6), DimenUtils.dp2px(5));
+        datechoose.setCompoundDrawables(null, null, dateChooseDrawable, null);
+        datechoose.setOnClickListener(this);
+
+        toBox = findViewById(R.id.to_box);
+        ((TextView)toBox.findViewById(R.id.tv_tips)).setText(R.string.dates_metrics);
+        toBox.setOnClickListener(this);
+        mChart = findViewById(R.id.boxchart);
+        markerView = new BoxMarkerView(getContext(), R.layout.box_marker);
+        itemContainer = findViewById(R.id.item_layout);
+    }
+
+    public void setBottomMargin(int bottomMargin) {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = DimenUtils.dp2px(bottomMargin);
+        setLayoutParams(lp);
+    }
+
+    public void setNewData(ArrayList<SimpleMovieBox> boxList){
+
+        if(!TextUtils.isEmpty(mContext.getPresenter().releaseTag))
+            datechoose.setText(mContext.getPresenter().releaseTag);
+        itemContainer.removeAllViews();
+        setVisibility(VISIBLE);
+
+        drawForm(boxList);
+    }
+
+    private void drawForm(ArrayList<SimpleMovieBox> boxList){
+        ChartUtils.initLineChart(mChart, getResources(),mContext);
+
+        mBoxList.clear();
+        mBoxList.addAll(boxList);
+        dateList = getXValue(boxList);
+
+        if(markerView.mType == 0){
+            genBoxLine(boxList);
+        }else if(markerView.mType == 1){
+            genShowLine(boxList);
+        }
+
+        //最多获取三日票房数据，不包括预售，上映前的点映零点场数据已被后台过滤
+        int size = boxList.size();
+        int num = 0;
+        int today = Integer.parseInt(Formatter.parse(Formatter.getCurrentCalendar(), Formatter.YYYYMMDD));
+        for (int i = 0; i < size; i++) {
+            SimpleMovieBox box = boxList.get(i);
+            if (box.showDate > today) {
+                break;
+            } else {
+                if (num < 3) {
+                    View v = genDataLine(box);
+                    itemContainer.addView(v);
+                }
+                num++;
+            }
+        }
+
+        if (itemContainer.getChildCount() > 0) {
+            View title = LayoutInflater.from(mContext).inflate(R.layout.item_ticket_layer, this, false);
+            ((TextView) title.findViewById(R.id.tv_name)).setText("日期");
+            ((TextView) title.findViewById(R.id.tv_column1)).setText(getResources().getString(R.string.gross_num));
+            ((TextView) title.findViewById(R.id.tv_column2)).setText(getResources().getString(R.string.gross_percent));
+            ((TextView) title.findViewById(R.id.tv_column3)).setText(getResources().getString(R.string.movie_show_rate));
+            ((TextView) title.findViewById(R.id.tv_column4)).setText(getResources().getString(R.string.label_seat_person));
+            itemContainer.addView(title, 0);
+
+            // UI要在表格的最后一行加一条 0.5dp 分割线
+            View lineView = new View(getContext());
+            lineView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, DimenUtils.dp2px(0.5f)));
+            lineView.setBackgroundColor(getContext().getResources().getColor(R.color.hex_eeeeee));
+            itemContainer.addView(lineView);
+
+            for (int i = 1; i < itemContainer.getChildCount() - 1; i++) {
+                View v = itemContainer.getChildAt(i);
+                if (i % 2 == 0)
+                    v.setBackgroundColor(Color.parseColor("#FFFBFBFB"));
+            }
+            itemContainer.setVisibility(VISIBLE);
+        }else {
+            itemContainer.setVisibility(GONE);
+        }
+        requestLayout();
+    }
+
+    public void setChartParent(final NestedScrollView parent){
+        mChart.setParent(parent);
+    }
+
+    public void setData(List<ReleaseTimeData> releaseTimeList, List<SimpleMovieBox> boxList, final String movieId, JumpUrlConfig jumpUrlConfig, KnbNavigator knbNavigator, MovieDetailActivity context) {
+        mContext = context;
+        this.movieId = movieId;
+        this.knbNavigator = knbNavigator;
+        this.jumpUrlConfig = jumpUrlConfig;
+        if(CollectionUtils.isEmpty(releaseTimeList)){
+            reMarkViewVisibility(GONE);
+            operate1.setVisibility(VISIBLE);
+        }else{
+            timeList.clear();
+            timeList = releaseTimeList;
+            operate1.setVisibility(INVISIBLE);
+            reMarkViewVisibility(VISIBLE);
+            for(int i= 0;i<releaseTimeList.size();i++){
+                if(releaseTimeList.get(i).selected){
+                    selTime = new Pair<>(i,releaseTimeList.get(i));
+                    datechoose.setText(releaseTimeList.get(i).releaseTag);
+                    break;
+                }
+            }
+        }
+        if (CollectionUtils.isEmpty(boxList)) {
+            setVisibility(GONE);
+            return;
+        }
+        itemContainer.removeAllViews();
+        setVisibility(VISIBLE);
+
+        drawForm(new ArrayList<>(boxList));
+
+        mChart.setExtraTopOffset(70f);
+        mChart.setMarkerViewOffsetX(DimenUtils.dp2px(8.5f)); // 同样凑距离
+        mChart.setMarkerViewOffsetY(DimenUtils.dp2px(9f));
+        mChart.setMarker(markerView);
+        mChart.setMarkerMode(MovieLineChart.MarkerMode.CUSTOMTOP);
+
+        mChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(Entry e, Highlight h) {
+                AnalyseUtils.clickLabMge("c_moviepro_x4p4flhs", "b_moviepro_wttpbdpo_mc", "movie_id", movieId);
+            }
+
+            @Override
+            public void onNothingSelected() {
+
+            }
+        });
+
+    }
+
+    private ArrayList<String> getXValue(List<SimpleMovieBox> boxList) {
+        ArrayList<String> xValues = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(boxList)) {
+            CustomDate rang = new CustomDate();
+            rang.type = CustomDate.TYPE_CUSTOM;
+            rang.startCalendar = Formatter.getCalendar(String.valueOf(boxList.get(0).showDate), Formatter.YYYYMMDD);
+            rang.endCalendar = Formatter.getCalendar(String.valueOf(boxList.get(boxList.size() - 1).showDate), Formatter.YYYYMMDD);
+            xValues.addAll(ChartUtils.getXValuesByDate(CustomDate.TYPE_CUSTOM, rang));
+        }
+        return xValues;
+    }
+
+
+    private LineData genBoxLine(ArrayList<SimpleMovieBox> boxList) {
+        if (CollectionUtils.isEmpty(boxList))
+            return null;
+        MovieLineChart.MarkerData markerData = mChart.getMarkerData();
+        markerData.highlightCircleColor = Color.parseColor("#FFEB0029");
+        int num = 0;
+        if (dateList == null)
+            return null;
+        List<Entry> yVals = new ArrayList<>();
+        xValueList.clear();
+        for (int i = 0; i < dateList.size(); i++) {
+            SimpleMovieBox box = null;
+            if (num < boxList.size())
+                box = boxList.get(num);
+            if (box != null && String.valueOf(box.showDate).equals(dateList.get(i))) {
+                if (box.splitBoxInfo.equals("--")) {
+                    yVals.add(new Entry(i, Float.NaN, box));
+                } else {
+                    yVals.add(new Entry(i, box.splitBox, box));
+                }
+                num++;
+            } else {
+                box = new SimpleMovieBox(0l, "--", 0l, "--", Integer.parseInt(dateList.get(i)));
+                yVals.add(new Entry(i, Float.NaN, box));
+            }
+            xValueList.add(Formatter.parse(dateList.get(i), Formatter.YYYYMMDD, Formatter.MVD));
+        }
+
+        LineData lineData = new LineData(getBoxDataSet(yVals, "boxData"));
+        lineData.setValueTextSize(12f);
+        int dashIndex = -1;
+
+        String today = Formatter.parse(Formatter.getCurrentCalendar(), Formatter.YYYYMMDD);
+
+        for (int i = 0; i < yVals.size(); i++) {
+            SimpleMovieBox movieBox = (SimpleMovieBox) yVals.get(i).getData();
+            if (i == 0 && String.valueOf(movieBox.showDate).compareTo(today) > 0) {
+                dashIndex = 0; //如果上来预售日期就大于今天，直接置0 跳出循环
+                break;
+            }
+            if (String.valueOf(movieBox.showDate).equals(today)) {
+                dashIndex = i;
+            }
+        }
+        float maxValue = ChartUtils.getMaxYValueByDataSets(lineData.getDataSets());
+        mChart.getAxisLeft().setAxisMaxValue(maxValue);
+        int unit = ChartUtils.getValueUnit(maxValue);
+        ((ProLineChartYValuesFormatter) mChart.getAxisLeft().getValueFormatter()).setUnit(unit);
+        mChart.getXAxis().setValueFormatter(new ProXValueFormatter(xValueList));
+        mChart.getXAxis().setLabelCount(ChartUtils.getLabelNum(xValueList.size()),false);
+        mChart.setData(lineData);
+        if (dashIndex < 0) {
+            mChart.highlightValue(0, 0);
+            dashIndex = xValueList.size()-1;
+        }else{
+            mChart.highlightValue(dashIndex, 0);
+        }
+        mChart.setDashIndex(dashIndex);
+        mChart.invalidate();
+        return lineData;
+    }
+
+    private LineData genShowLine(ArrayList<SimpleMovieBox> boxList) {
+        if (CollectionUtils.isEmpty(boxList))
+            return null;
+        MovieLineChart.MarkerData markerData = mChart.getMarkerData();
+        markerData.highlightCircleColor = Color.parseColor("#FFFC8B00");
+        int num = 0;
+        if (dateList == null)
+            return null;
+        List<Entry> yVals = new ArrayList<>();
+        xValueList.clear();
+        for (int i = 0; i < dateList.size(); i++) {
+            SimpleMovieBox box = null;
+            if (num < boxList.size())
+                box = boxList.get(num);
+            if (box != null && String.valueOf(box.showDate).equals(dateList.get(i))) {
+                if (box.showInfo.equals("--")) {
+                    yVals.add(new Entry(i, Float.NaN, box));
+                } else {
+                    yVals.add(new Entry(i, box.show, box));
+                }
+                num++;
+            } else {
+                box = new SimpleMovieBox(0l, "--", 0l, "--", Integer.parseInt(dateList.get(i)));
+                yVals.add(new Entry(i, Float.NaN, box));
+            }
+            xValueList.add(Formatter.parse(dateList.get(i), Formatter.YYYYMMDD, Formatter.MVD));
+        }
+
+        LineData lineData = new LineData(getShowDataSet(yVals, "showData"));
+        lineData.setValueTextSize(12f);
+
+        int dashIndex = -1;
+        String today = Formatter.parse(Formatter.getCurrentCalendar(), Formatter.YYYYMMDD);
+
+        for (int i = 0; i < yVals.size(); i++) {
+            SimpleMovieBox movieBox = (SimpleMovieBox) yVals.get(i).getData();
+            if (i == 0 && String.valueOf(movieBox.showDate).compareTo(today) > 0) {
+                dashIndex = 0;//如果上来预售日期就大于今天，直接置0 跳出循环
+                break;
+            }
+            if (String.valueOf(movieBox.showDate).equals(today)) {
+                dashIndex = i;
+            }
+        }
+        float maxValue = ChartUtils.getMaxYValueByDataSets(lineData.getDataSets());
+        mChart.getAxisLeft().setAxisMaxValue(maxValue);
+        if (dashIndex < 0) {
+            dashIndex = xValueList.size()-1;
+        }
+        mChart.setDashIndex(dashIndex);
+        mChart.highlightValue(dashIndex, 0);
+        int unit = ChartUtils.getValueUnit(maxValue);
+        ((ProLineChartYValuesFormatter) mChart.getAxisLeft().getValueFormatter()).setUnit(unit);
+        mChart.getXAxis().setValueFormatter(new ProXValueFormatter(xValueList));
+        mChart.getXAxis().setLabelCount(ChartUtils.getLabelNum(xValueList.size()),false);
+        mChart.setData(lineData);
+        mChart.invalidate();
+        return lineData;
+    }
+
+    private LineDataSet getBoxDataSet(List<Entry> yVals, String label) {
+        LineDataSet set = new LineDataSet(yVals, label);
+        ChartUtils.initSingleLineDataSet(set,getResources());
+        return set;
+    }
+
+    private LineDataSet getShowDataSet(List<Entry> yVals, String label) {
+        LineDataSet set = getBoxDataSet(yVals, label);
+        set.setColor(getResources().getColor(R.color.chart_yellow));
+        set.setLineWidth(1.5f);
+        if (Build.VERSION.SDK_INT >= 18) {
+            // fill drawable only supported on api level 18 and above
+            GradientDrawable gd = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{Color.parseColor("#33FC8B00"),Color.parseColor("#00FC8B00")});//创建drawable
+            set.setFillDrawable(gd);
+        }
+        else {
+            set.setFillColor(getResources().getColor(R.color.chart_yellow));
+        }
+        return set;
+    }
+
+
+    private View genDataLine(SimpleMovieBox box) {
+        View line = LayoutInflater.from(mContext).inflate(R.layout.item_md_box, this, false);
+        try {
+            if (box != null) {
+                TextView title1 = line.findViewById(R.id.title1);
+                TextView column1 = line.findViewById(R.id.tv_column1);
+                TextView column2 = line.findViewById(R.id.tv_column2);
+                TextView column3 = line.findViewById(R.id.tv_column3);
+                TextView column4 = line.findViewById(R.id.tv_column4);
+                title1.setTypeface(MaoyanTypeface.getTypeface(MaoyanTypeface.TYPEFACT_REGULAR));
+                column1.setTypeface(MaoyanTypeface.getTypeface(MaoyanTypeface.TYPEFACT_LIGHT));
+                column1.setTextColor(getContext().getResources().getColor(R.color.hex_eb0029));
+                column2.setTypeface(MaoyanTypeface.getTypeface(MaoyanTypeface.TYPEFACT_LIGHT));
+                column3.setTypeface(MaoyanTypeface.getTypeface(MaoyanTypeface.TYPEFACT_LIGHT));
+                column4.setTypeface(MaoyanTypeface.getTypeface(MaoyanTypeface.TYPEFACT_LIGHT));
+                String week = Formatter.parseWeek(Formatter.parse(String.valueOf(box.showDate), Formatter.YYYYMMDD));
+                if (week.equals("周六") || week.equals("周日")) {
+                    int color = ComponentDataRevertUtils.parseColorAlpha("#eb0029 1.0");
+                    title1.setText(
+                            ScrollItemComponent.genShowInfo(Formatter.parse(String.valueOf(box.showDate), Formatter.YYYYMMDD, Formatter.YYYY_MM_DD), color));
+                    ((TextView) line.findViewById(R.id.title2_left)).setText(ScrollItemComponent.genShowInfo(week, color));
+                } else {
+                    title1.setText(Formatter.parse(String.valueOf(box.showDate), Formatter.YYYYMMDD, Formatter.YYYY_MM_DD));
+                    ((TextView) line.findViewById(R.id.title2_left)).setText(week);
+                }
+                if (TextUtils.isEmpty(box.releaseInfo)) {
+                    line.findViewById(R.id.title2_right).setVisibility(INVISIBLE);
+                } else {
+                    line.findViewById(R.id.title2_right).setVisibility(VISIBLE);
+                    ((TextView) line.findViewById(R.id.title2_right)).setText(
+                            ScrollItemComponent.genShowInfo(box.releaseInfo, ComponentDataRevertUtils.parseColorAlpha(box.releaseInfoColor)));
+                }
+
+                column1.setText(box.splitBoxInfo);
+                column2.setText(box.splitBoxRate);
+                column3.setText(box.showRate);
+                column4.setText(box.avgShowView);
+            }
+
+        } catch (Exception e) {
+            return null;
+        }
+        return line;
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.heat_day:
+                markerView.mType = 0;
+                boxBtn.setSelected(true);
+                showBtn.setSelected(false);
+                box2Btn.setSelected(true);
+                show2Btn.setSelected(false);
+                genBoxLine(mBoxList);
+                AnalyseUtils.clickLabMge("c_moviepro_x4p4flhs", "b_moviepro_qhxn9d8t_mc", "movie_id", movieId);
+                break;
+            case R.id.heat_time:
+                markerView.mType = 1;
+                boxBtn.setSelected(false);
+                showBtn.setSelected(true);
+                box2Btn.setSelected(false);
+                show2Btn.setSelected(true);
+                genShowLine(mBoxList);
+                AnalyseUtils.clickLabMge("c_moviepro_x4p4flhs", "b_moviepro_s7m8p1nw_mc", "movie_id", movieId);
+                break;
+            case R.id.to_box:
+                AnalyseUtils.clickLabMge("c_moviepro_x4p4flhs", "b_moviepro_9pslnkp3_mc", "movie_id", movieId);
+                if (knbNavigator != null && jumpUrlConfig != null && !TextUtils.isEmpty(jumpUrlConfig.boxShow))
+                    knbNavigator.toOpenUrl(mContext,jumpUrlConfig.boxShow);
+                break;
+            case R.id.date_choose:
+                AnalyseUtils.clickLabMge("c_moviepro_x4p4flhs","b_moviepro_4shylebw_mc","movie_id",movieId);
+//                timeList.clear();
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年3月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年4月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年5月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年6月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年7月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年9月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年10月",false));
+//                timeList.add(new ReleaseTimeData(20200202,20200303,"重映2020年11月",false));
+                if(popupWindow!= null && popupWindow.isShowing())
+                    return;
+                setBgAlpha(0.8f);
+                int[] location = new int[2];
+                int maxHeight = 210;//日期选择框的最高高度
+                datechoose.getLocationOnScreen(location);
+                popupWindow = new PopupWindow();
+                popupWindow.setTouchable(true);
+                popupWindow.setOutsideTouchable(true);
+                popupWindow.setWidth(DimenUtils.dp2px(124));
+                if(timeList.size()*32 < maxHeight){
+                    popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+                }else{
+                    popupWindow.setHeight(DimenUtils.dp2px(maxHeight));
+                }
+                popupWindow.setBackgroundDrawable(new ColorDrawable(0));
+                ListView listView = new ListView(mContext);
+                ViewGroup.LayoutParams params = new LayoutParams(DimenUtils.dp2px(124), ViewGroup.LayoutParams.WRAP_CONTENT);
+                listView.setLayoutParams(params);
+                if(selTime == null){
+                    selTime = new Pair<>(1,null);
+                }
+                final AgainTimeAdapter timeAdapter = new AgainTimeAdapter(mContext,timeList,selTime.first);
+                listView.setAdapter(timeAdapter);
+                listView.setVerticalScrollBarEnabled(false);
+                listView.setBackgroundResource(R.drawable.bg_f7_radus2);
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        selTime = new Pair<>(position,timeList.get(position));
+                        mContext.mProgress.setVisibility(VISIBLE);
+                        setBgAlpha(1.0f);
+                        popupWindow.dismiss();
+                        ReleaseTimeData timeData = timeList.get(position);
+                        if(timeData != null)
+                            mContext.getPresenter().loadDailyBox(timeData.releaseTag,timeData.startDate,timeData.endDate,Long.parseLong(movieId));
+                    }
+                });
+                popupWindow.setContentView(listView);
+                Rect rect = new Rect();
+                itemContainer.getLocalVisibleRect(rect);
+                int listHeight = DimenUtils.dp2px(timeList.size()*32 < maxHeight ? timeList.size()*32 : maxHeight);
+                int leftHeight = DimenUtils.getScreenHeight()-location[1]-datechoose.getMeasuredHeight()-DimenUtils.dp2px(35);
+                if(rect.top != 0){
+                    if(listHeight > leftHeight){
+                        popupWindow.showAtLocation(datechoose, NO_GRAVITY,DimenUtils.dp2px(15),location[1]- listHeight - DimenUtils.dp2px(5));
+                    }else{
+                        popupWindow.showAtLocation(datechoose, NO_GRAVITY,DimenUtils.dp2px(15),location[1]+datechoose.getMeasuredHeight()+ DimenUtils.dp2px(5));
+                    }
+                }else{//如果数据列表控件显示出来，说明日期选择pop绝对能放下，直接描点展示
+                    popupWindow.showAtLocation(datechoose, NO_GRAVITY,DimenUtils.dp2px(15),location[1]+datechoose.getMeasuredHeight() + DimenUtils.dp2px(5));
+                }
+                popupWindow.setOnDismissListener(new PopupWindow.OnDismissListener() {
+                    @Override
+                    public void onDismiss() {
+                        setBgAlpha(1.0f);
+                    }
+                });
+                break;
+        }
+
+
+    }
+    private void setBgAlpha(float alpha){
+        WindowManager.LayoutParams lp = mContext.getWindow().getAttributes();
+        lp.alpha = alpha; //0.0-1.0
+        mContext.getWindow().setAttributes(lp);
+        mContext.getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+    }
+
+    private void reMarkViewVisibility(int visibility){
+        datechoose.setVisibility(visibility);
+        operate2.setVisibility(visibility);
+    }
+}
